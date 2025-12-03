@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Draw a Digit</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; }
+    #canvas {
+      border: 1px solid #ccc;
+      background: black;
+      cursor: crosshair;
+    }
+    #controls { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Draw a digit (0–9)</h1>
+
+  <canvas id="canvas" width="280" height="280"></canvas>
+
+  <div id="controls">
+    <button id="clearBtn">Clear</button>
+    <button id="predictBtn">Predict</button>
+  </div>
+
+  
+  <h2 id="result">Prediction: ?</h2>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Fill background black
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+
+    let drawing = false;
+
+    canvas.addEventListener("mousedown", e => {
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      if (!drawing) return;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    });
+
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mouseleave", () => drawing = false);
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById("predictBtn").addEventListener("click", () => {
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("file", blob, "digit.png");
+
+        fetch("/predict", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.prediction !== undefined) {
+            document.getElementById("result").textContent =
+              `Prediction: ${data.prediction}`;
+          } else {
+            document.getElementById("result").textContent =
+              `Error: ${data.error || "unknown"}`;
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("result").textContent = "Error in request";
+        });
+      });
+    });
+  </script>
+</body>
+</html>

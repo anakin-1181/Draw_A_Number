@@ -10,9 +10,9 @@ pinned: false
 
 # Draw A Number (MNIST CNN Demo)
 
-This Hugging Face Space lets you draw a digit (0–9) on a canvas and the app predicts the number using a PyTorch CNN trained on MNIST.
+This Hugging Face Space lets you draw a digit (0–9) on a canvas and the app predicts the number using a PyTorch CNN trained on MNIST. The model was trained in the machine-learning-notebook repository; this Space demonstrates a demo use case of that trained model.
 
-The model weights are stored separately in a model repository and loaded with `hf_hub_download()` at runtime.
+The model weights are stored separately in a model repository and loaded with `hf_hub_download()` at runtime. Note: this Space is a demo that uses the model and training artifacts from the machine-learning-notebook repository.
 
 ## Tech Stack
 - Flask backend

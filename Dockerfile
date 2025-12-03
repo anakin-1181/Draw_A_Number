@@ -1,33 +1,31 @@
-# --- Base image ---
-# Python-slim is lightweight but still supports PyTorch CPU wheels.
 FROM python:3.10-slim
 
-# --- System dependencies ---
-# These are needed for numpy, pillow and general scientific libs.
+# System deps for numpy/pillow
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libjpeg-dev \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# --- Working directory ---
 WORKDIR /app
 
-# --- Copy project files ---
+# Copy project
 COPY . /app
 
-# --- Install Python dependencies ---
-# Requirements must exist in the repo.
+# Install normal Python deps
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- Set environment variables ---
-# Hugging Face Spaces expect apps to listen on 7860.
+# Install PyTorch CPU wheels explicitly from the official index
+RUN pip install --no-cache-dir \
+    torch==2.2.2 \
+    torchvision==0.17.2 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# HF Spaces expects port 7860
 ENV PORT=7860
 ENV PYTHONUNBUFFERED=1
 
-# --- Expose port ---
 EXPOSE 7860
 
-# --- Launch server ---
-# Use gunicorn in production. "app:app" = app.py contains Flask instance "app"
+# app.py must define `app = Flask(__name__)`
 CMD ["gunicorn", "-b", "0.0.0.0:7860", "app:app"]

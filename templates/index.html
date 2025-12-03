@@ -1,88 +1,205 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>Draw a Digit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: sans-serif; text-align: center; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background: #111;
+      color: #f5f5f5;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    #canvas-wrapper {
+      display: inline-block;
+      touch-action: none; /* important to avoid scrolling while drawing */
+    }
+
     #canvas {
-      border: 1px solid #ccc;
+      border: 2px solid #444;
       background: black;
       cursor: crosshair;
+      /* keep aspect ratio and shrink on small screens */
+      max-width: 90vw;
+      height: auto;
+      image-rendering: pixelated;
     }
-    #controls { margin-top: 10px; }
+
+    #controls {
+      margin-top: 10px;
+    }
+
+    button {
+      margin: 0 8px;
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #clearBtn {
+      background: #444;
+      color: white;
+    }
+
+    #predictBtn {
+      background: #1e88e5;
+      color: white;
+    }
+
+    #result {
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
   <h1>Draw a digit (0–9)</h1>
 
-  <canvas id="canvas" width="280" height="280"></canvas>
+  <div id="canvas-wrapper">
+    <!-- fixed logical size; CSS scales it visually -->
+    <canvas id="canvas" width="280" height="280"></canvas>
+  </div>
 
   <div id="controls">
     <button id="clearBtn">Clear</button>
     <button id="predictBtn">Predict</button>
   </div>
 
-  
   <h2 id="result">Prediction: ?</h2>
 
   <script>
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // Fill background black
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 20;
-    ctx.lineCap = "round";
+    // Initial canvas setup
+    function initCanvas() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+    }
+    initCanvas();
 
     let drawing = false;
 
-    canvas.addEventListener("mousedown", e => {
+    // Helpers to get coordinates for mouse & touch
+    function getRelativePos(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+      };
+    }
+
+    // Mouse events
+    canvas.addEventListener("mousedown", (e) => {
       drawing = true;
+      const { x, y } = getRelativePos(e.clientX, e.clientY);
       ctx.beginPath();
-      ctx.moveTo(e.offsetX, e.offsetY);
+      ctx.moveTo(x, y);
     });
 
-    canvas.addEventListener("mousemove", e => {
+    canvas.addEventListener("mousemove", (e) => {
       if (!drawing) return;
-      ctx.lineTo(e.offsetX, e.offsetY);
+      const { x, y } = getRelativePos(e.clientX, e.clientY);
+      ctx.lineTo(x, y);
       ctx.stroke();
     });
 
-    canvas.addEventListener("mouseup", () => drawing = false);
-    canvas.addEventListener("mouseleave", () => drawing = false);
+    canvas.addEventListener("mouseup", () => (drawing = false));
+    canvas.addEventListener("mouseleave", () => (drawing = false));
 
+    // Touch events (for mobile/tablet)
+    canvas.addEventListener(
+      "touchstart",
+      (e) => {
+        e.preventDefault(); // stop scroll/zoom
+        if (e.touches.length > 0) {
+          drawing = true;
+          const touch = e.touches[0];
+          const { x, y } = getRelativePos(touch.clientX, touch.clientY);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        }
+      },
+      { passive: false }
+    );
+
+    canvas.addEventListener(
+      "touchmove",
+      (e) => {
+        e.preventDefault();
+        if (!drawing || e.touches.length === 0) return;
+        const touch = e.touches[0];
+        const { x, y } = getRelativePos(touch.clientX, touch.clientY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      },
+      { passive: false }
+    );
+
+    canvas.addEventListener(
+      "touchend",
+      (e) => {
+        e.preventDefault();
+        drawing = false;
+      },
+      { passive: false }
+    );
+
+    canvas.addEventListener(
+      "touchcancel",
+      (e) => {
+        e.preventDefault();
+        drawing = false;
+      },
+      { passive: false }
+    );
+
+    // Clear button
     document.getElementById("clearBtn").addEventListener("click", () => {
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      initCanvas();
+      document.getElementById("result").textContent = "Prediction: ?";
     });
 
+    // Predict button
     document.getElementById("predictBtn").addEventListener("click", () => {
-      canvas.toBlob(blob => {
+      canvas.toBlob((blob) => {
         const formData = new FormData();
         formData.append("file", blob, "digit.png");
 
         fetch("/predict", {
           method: "POST",
-          body: formData
+          body: formData,
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data.prediction !== undefined) {
-            document.getElementById("result").textContent =
-              `Prediction: ${data.prediction}`;
-          } else {
-            document.getElementById("result").textContent =
-              `Error: ${data.error || "unknown"}`;
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById("result").textContent = "Error in request";
-        });
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.prediction !== undefined) {
+              document.getElementById(
+                "result"
+              ).textContent = `Prediction: ${data.prediction}`;
+            } else {
+              document.getElementById("result").textContent =
+                "Error: " + (data.error || "unknown");
+            }
+          })
+          .catch((err) => {
+            console.error(err);
+            document.getElementById("result").textContent = "Error in request";
+          });
       });
     });
   </script>

@@ -10,9 +10,18 @@ pinned: false
 
 # Draw A Number (MNIST CNN Demo)
 
-This Hugging Face Space lets you draw a digit (0–9) on a canvas and the app predicts the number using a PyTorch CNN trained on MNIST. The model was trained in the machine-learning-notebook repository; this Space demonstrates a demo use case of that trained model.
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/anakin-1181/Draw_A_Number)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-CNN-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
 
-The model weights are stored separately in a model repository and loaded with `hf_hub_download()` at runtime. Note: this Space is a demo that uses the model and training artifacts from the machine-learning-notebook repository.
+
+This Hugging Face Space lets you draw a digit (0–9) on a canvas and the app predicts the number using a PyTorch CNN trained on MNIST.
+
+**Model Training**: The CNN model was trained in the [machine-learning-notebook](https://github.com/anakin-1181/machine-learning-notebook) repository.
+
+**Live Demo**: Try it out at [https://huggingface.co/spaces/anakin-1181/Draw_A_Number](https://huggingface.co/spaces/anakin-1181/Draw_A_Number)
+
+The model weights are loaded from Hugging Face Hub using `hf_hub_download()` at runtime.
 
 ## Tech Stack
 - Flask backend
@@ -28,5 +37,5 @@ The model weights are stored separately in a model repository and loaded with `h
 4. CNN predicts digit  
 5. Result is shown instantly
 
-
 Enjoy playing with your handwritten digit model!
+
